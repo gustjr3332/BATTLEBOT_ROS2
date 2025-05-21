@@ -3,23 +3,33 @@
 <package format="3">
   <name>battlebot_spinner</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>red blade Battlebot</description>
   <maintainer email="gustjr3332@gmail.com">gustjr3332</maintainer>
   <license>MIT</license>
+
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_python</buildtool_depend>
   
-  <exec_depend>gazebo_ros</exec_depend>
-  <exec_depend>xacro</exec_depend>
-  <exec_depend>rclpy</exec_depend>
+  <exec_depend>roslaunch</exec_depend>
 
-  <test_depend>ament_copyright</test_depend>
-  <test_depend>ament_flake8</test_depend>
-  <test_depend>ament_pep257</test_depend>
-  <test_depend>python3-pytest</test_depend>
-
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>gazebo_ros</depend>
+  <depend>gazebo_ros_pkgs</depend>
+  <depend>gazebo_plugins</depend>
+  <depend>xacro</depend>
+  <depend>urdf</depend>
+  <depend>robot_state_publisher</depend>
+  <depend>joint_state_publisher</depend>
+  <depend>teleop_twist_keyboard</depend>
+  <depend>joy</depend>
   <export>
+
     <build_type>ament_python</build_type>
-  </export>
+    <gazebo_ros gazebo_model_path="$BATTLEBOT_PROJECT/src/battlebot_spinner/models"/>
+    <gazebo_ros gazebo_world_path="$BATTLEBOT_PROJECT/src/battlebot_spinner/worlds"/>
+ </export>
 </package>
 
