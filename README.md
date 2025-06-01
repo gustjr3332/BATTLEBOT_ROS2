@@ -1,11 +1,5 @@
-# battlebot_ws
-version : gazebo fortress
-ubuntu 22.04
+# battlesim 워크스페이스 안에 battlebot_sim 패키지 기준
 
-
-gazebo classic에서 실행 시 코드 변경 필요!!
-
-실행 방법
 1. cd ~/battlesim
 2. colcon build
 3. source install/setup.bash
