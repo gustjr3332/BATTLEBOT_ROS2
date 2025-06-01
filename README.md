@@ -20,3 +20,5 @@ gazebo classic에서 실행 시 코드 변경 필요!!
 -파이썬 패키지 추가 설치 필요-
 sudo apt update
 sudo apt install ros-foxy-tf-transformations
+sudo apt install python3-pip
+sudo pip3 install transforms3d
