@@ -1,0 +1,147 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="battlebot_arena">
+
+    <physics type="ode">
+      <max_step_size>0.002</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>10 10</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>10 10</size>
+            </plane>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="arena_walls">
+      <static>true</static>
+      <link name="wall_link">
+
+        <collision name="north_wall">
+          <pose>0 5.5 0.5 0 0 0</pose>
+          <geometry><box><size>11 1 1</size></box></geometry>
+        </collision>
+        <visual name="north_wall_visual">
+          <pose>0 5.5 0.5 0 0 0</pose>
+          <geometry><box><size>11 1 1</size></box></geometry>
+          <material><diffuse>0.6 0.6 0.6 1</diffuse></material>
+        </visual>
+
+        <collision name="south_wall">
+          <pose>0 -5.5 0.5 0 0 0</pose>
+          <geometry><box><size>11 1 1</size></box></geometry>
+        </collision>
+        <visual name="south_wall_visual">
+          <pose>0 -5.5 0.5 0 0 0</pose>
+          <geometry><box><size>11 1 1</size></box></geometry>
+          <material><diffuse>0.6 0.6 0.6 1</diffuse></material>
+        </visual>
+
+        <collision name="east_wall">
+          <pose>5.5 0 0.5 0 0 0</pose>
+          <geometry><box><size>1 11 1</size></box></geometry>
+        </collision>
+        <visual name="east_wall_visual">
+          <pose>5.5 0 0.5 0 0 0</pose>
+          <geometry><box><size>1 11 1</size></box></geometry>
+          <material><diffuse>0.6 0.6 0.6 1</diffuse></material>
+        </visual>
+
+        <collision name="west_wall">
+          <pose>-5.5 0 0.5 0 0 0</pose>
+          <geometry><box><size>1 11 1</size></box></geometry>
+        </collision>
+        <visual name="west_wall_visual">
+          <pose>-5.5 0 0.5 0 0 0</pose>
+          <geometry><box><size>1 11 1</size></box></geometry>
+          <material><diffuse>0.6 0.6 0.6 1</diffuse></material>
+        </visual>
+
+      </link>
+    </model>
+
+    <model name="moving_obstacle">
+      <pose>0 0 0.25 0 0 0</pose>
+      <static>false</static>
+      <link name="link">
+        <gravity>0</gravity>
+        <inertial>
+          <mass>30</mass>
+          <inertia>
+            <ixx>999</ixx>
+            <iyy>999</iyy>
+            <izz>999</izz>
+            <ixy>0.0</ixy>
+            <ixz>0.0</ixz>
+            <iyz>0.0</iyz>
+          </inertia>
+        </inertial>
+        <visual name="visual">
+          <geometry><box><size>2 0.5 0.5</size></box></geometry>
+          <material><diffuse>0.8 0.2 0.2 1</diffuse></material>
+        </visual>
+        <collision name="moving_obstacle_collision">
+          <geometry><box><size>2 0.5 0.5</size></box></geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>100.0</mu>
+                <mu2>50.0</mu2>
+              </ode>
+            </friction>
+            <contact>
+            <ode>
+              <kp>100000.0</kp> <kd>1.0</kd>
+              <max_vel>0.1</max_vel>
+              <min_depth>0.003</min_depth>
+            </ode>
+            </contact>
+          </surface>
+        </collision>
+      </link>
+      
+      <plugin name="planar_move_plugin" filename="libgazebo_ros_planar_move.so">
+        <ros>
+          <namespace>/moving_obstacle</namespace>
+        </ros>
+      </plugin>
+    </model>
+
+<include>
+  <uri>model://saw_blade_1</uri>
+  <name>saw_blade_1</name>
+  <pose>3 3 0.25 0 0 0</pose>
+</include>
+
+<include>
+  <uri>model://saw_blade_2</uri>
+  <name>saw_blade_2</name>
+  <pose>-3 -3 0.25 0 0 0</pose>
+</include>
+
+  </world>
+</sdf>

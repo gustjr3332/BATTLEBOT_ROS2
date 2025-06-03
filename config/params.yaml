@@ -1,0 +1,12 @@
+/**:
+  ros__parameters:
+    initial_health: 100.0
+    contact_damage_per_event: 1.0
+    moving_obstacle_contact_damage: 1.0
+    saw_blade_contact_damage: 5.0 
+    flip_damage_per_event: 99.0
+    weapon_damage_saw: 10.0
+    weapon_damage_hammer: 15.0
+    flip_threshold_roll_deg: 90.0 # Degrees
+    flip_threshold_pitch_deg: 90.0 # Degrees
+    # 데미지 노드 추가 구문
