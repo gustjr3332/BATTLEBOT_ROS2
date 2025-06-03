@@ -8,6 +8,8 @@
 2. colcon build
 3. source install/setup.bash
 4. ros2 launch battlebot_sim battlebot_sim.launch.py
+5. ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/battlebot/cmd_vel!
+6. ros2 topic echo /battlesim/health 또는 /battlesim/contact 로 state 값에 변화 확인
 
 -----------------------6/1 데미지 노드 관련 사항
 
