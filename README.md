@@ -1,6 +1,7 @@
 <<<<<<< HEAD
-# BATTLEBOT_ROS2
-월드 파일 업로드
+#워크스페이스에서 git clone https://github.com/gustjr3332/BATTLEBOT_ROS2.git
+실행하면 BATTLEBOT_ROS2 패키지다운받아집니다
+>>>>>>>
 =======
 # battlesim 워크스페이스 안에 battlebot_sim 패키지 기준
 
