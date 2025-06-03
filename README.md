@@ -24,5 +24,3 @@ sudo apt install ros-foxy-tf-transformations
 sudo apt install python3-pip
 
 sudo pip3 install transforms3d
-
->>>>>>> ad2efb42b9f34e4215535638cdf37adfb675a237
