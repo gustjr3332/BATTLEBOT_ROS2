@@ -12,6 +12,7 @@
 5. ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/battlebot/cmd_vel!
 6. ros2 topic echo /battlesim/health 또는 /battlesim/contact 로 state 값에 변화 확인
 
+7.ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/battlebot/cmd_vel
 -----------------------6/1 데미지 노드 관련 사항
 
 주요변경사항:
