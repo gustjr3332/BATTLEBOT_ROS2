@@ -34,6 +34,8 @@ setup(
             'moving_obstacle_controller = battlebot_sim.moving_obstacle_controller:main',
              # 데미지 계산 노드 실행 스크립트 추가
             'damage_calculator_node = battlebot_sim.damage_calculator_node:main',
+             # dual_teleop 키보드 제어 노드
+            'dual_teleop = battlebot_sim.dual_teleop:main',
         ],
     },
 )

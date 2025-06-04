@@ -27,7 +27,7 @@
         <geometry> 
           <mesh>
             <uri>model://saw_blade_1/meshes/Sawblade.dae</uri>
-            <scale>4 4 2</scale>
+            <scale>4.1 4.1 2.1</scale>
           </mesh>
         </geometry>
         <surface>

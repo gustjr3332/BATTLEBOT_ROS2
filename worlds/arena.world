@@ -105,7 +105,7 @@
           <material><diffuse>0.8 0.2 0.2 1</diffuse></material>
         </visual>
         <collision name="moving_obstacle_collision">
-          <geometry><box><size>2 0.5 0.5</size></box></geometry>
+          <geometry><box><size>2.01 0.51 0.51</size></box></geometry>
           <surface>
             <friction>
               <ode>
