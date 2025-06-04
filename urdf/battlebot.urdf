@@ -85,11 +85,11 @@
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="1.5708 0 0"/>
-      <geometry><cylinder radius="0.08" length="0.01"/></geometry>
+      <geometry><cylinder radius="0.3" length="0.01"/></geometry>
       <material name="grey"/>
     </visual>
     <collision name="battlebot_saw_collision"> <origin xyz="0 0 0" rpy="1.5708 0 0"/>
-      <geometry><cylinder radius="0.08" length="0.01"/></geometry>
+      <geometry><cylinder radius="0.3" length="0.01"/></geometry>
     </collision>
   </link>
 

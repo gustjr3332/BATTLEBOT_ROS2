@@ -1,14 +1,24 @@
+import os
 from launch import LaunchDescription
 from launch.actions import ExecuteProcess, TimerAction
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
-import os
+
 
 def generate_launch_description():
     pkg_share = get_package_share_directory('battlebot_sim')
     world_file = os.path.join(pkg_share, 'worlds', 'arena.world')
     urdf_file = os.path.join(pkg_share, 'urdf', 'battlebot.urdf')
     
+    models_path = os.path.join(pkg_share, 'models')
+
+    current_model_path = os.environ.get('GAZEBO_MODEL_PATH', '')
+    if models_path not in current_model_path.split(':'): # 중복 추가 방지
+        if current_model_path:
+            os.environ['GAZEBO_MODEL_PATH'] = models_path + ':' + current_model_path
+        else:
+            os.environ['GAZEBO_MODEL_PATH'] = models_path
+    print(f"DEBUG: GAZEBO_MODEL_PATH set to: {os.environ.get('GAZEBO_MODEL_PATH')}")
 
     params_file_path = os.path.join(pkg_share, 'config', 'params.yaml')
 
@@ -18,6 +28,7 @@ def generate_launch_description():
             'gazebo', # 시스템 PATH에 있는 'gazebo' 실행 파일 사용
             '--verbose',
             world_file,
+            '-s', 'libgazebo_ros_init.so', # Gazebo ROS 초기화 플러그인 로드
             '-s', 'libgazebo_ros_factory.so' # Gazebo ROS 인터페이스 플러그인 로드
         ],
         output='screen'

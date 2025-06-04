@@ -1,3 +1,5 @@
+import os
+from glob import glob
 from setuptools import setup
 
 
@@ -11,9 +13,10 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name + '/launch', ['launch/spawn_battlebot.launch.py']),
-        ('share/' + package_name + '/urdf', ['urdf/battlebot.urdf']),
-        ('share/' + package_name + '/worlds', ['worlds/arena.world']),
+        (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
+        (os.path.join('share', package_name, 'urdf'), glob('urdf/*.urdf')),
+        (os.path.join('share', package_name, 'worlds'), glob('worlds/*.world')),
+        (os.path.join('share', package_name, 'models'), glob('models/**/*.*', recursive=True)), 
         # 데미지 노드 추가 구문
         ('share/' + package_name + '/config', ['config/params.yaml']),
         # 설정 파일 설치 추가
