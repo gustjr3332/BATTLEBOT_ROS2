@@ -14,7 +14,9 @@
   <material name="grey">
     <color rgba="0.7 0.7 0.7 1"/>
   </material>
-
+   <material name="yellow">
+   <color rgba="1 1 0 1"/>
+  </material>
   <!-- Base link -->
   <link name="base_link">
     <inertial>
@@ -152,7 +154,7 @@
   <gazebo reference="contact_sensor_link">
     <sensor name="main_contact_sensor" type="contact">
       <always_on>true</always_on>
-      <update_rate>100</update_rate>
+      <update_rate>3</update_rate>
       <contact>
         <collision>battlebot_front_bumper_collision</collision>
       </contact>
@@ -169,7 +171,7 @@
   <gazebo reference="saw_link">
     <sensor name="saw_contact_sensor" type="contact">
       <always_on>true</always_on>
-      <update_rate>100</update_rate>
+      <update_rate>3</update_rate>
       <contact>
         <collision>battlebot_saw_collision</collision>
       </contact>

@@ -1,211 +1,224 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.parameter import Parameter
+# --- 수정: ROS의 시간 모듈을 사용합니다 ---
+from rclpy.time import Time, Duration
 
 from gazebo_msgs.msg import ContactsState
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Float32
-from tf_transformations import euler_from_quaternion # Quaternion to RPY conversion
-
+from transforms3d.euler import quat2euler
 import math
 
 class DamageCalculator(Node):
     def __init__(self):
         super().__init__('damage_calculator')
 
-        # Declare and get parameters
+        # --- 수정: 파라미터 선언 부분에 hit_interval 추가 ---
+        self.declare_parameter('hit_interval', 1.0 / 3.0) # 1초에 3번 데미지
         self.declare_parameter('initial_health', 100.0)
         self.declare_parameter('contact_damage_per_event', 1.0)
         self.declare_parameter('moving_obstacle_contact_damage', 5.0)
-        self.declare_parameter('saw_blade_contact_damage', 5.0) # <--- 새로 추가된 파라미터
-        self.declare_parameter('flip_damage_per_event', 5.0)
+        self.declare_parameter('saw_blade_contact_damage', 5.0)
+        self.declare_parameter('flip_damage_per_event', 99.0)
         self.declare_parameter('weapon_damage_saw', 10.0)
-        self.declare_parameter('weapon_damage_hammer', 15.0)
-        self.declare_parameter('flip_threshold_roll_deg', 90.0)  # Degrees
-        self.declare_parameter('flip_threshold_pitch_deg', 90.0) # Degrees
+        self.declare_parameter('flip_threshold_roll_deg', 90.0)
+        self.declare_parameter('flip_threshold_pitch_deg', 90.0)
 
-        self.initial_health = self.get_parameter('initial_health').get_parameter_value().double_value
+        # 파라미터 값 가져오기
+        self.initial_health = self.get_parameter('initial_health').value
         self.damage_config = {
-            'contact_damage': self.get_parameter('contact_damage_per_event').get_parameter_value().double_value,
-            'moving_obstacle_contact_damage': self.get_parameter('moving_obstacle_contact_damage').get_parameter_value().double_value,
-            'saw_blade_contact_damage': self.get_parameter('saw_blade_contact_damage').get_parameter_value().double_value, # <--- 파라미터 값 가져오기
-            'flip_damage': self.get_parameter('flip_damage_per_event').get_parameter_value().double_value,
-            'weapon_damage_saw': self.get_parameter('weapon_damage_saw').get_parameter_value().double_value,
-            'weapon_damage_hammer': self.get_parameter('weapon_damage_hammer').get_parameter_value().double_value,
+            'contact_damage': self.get_parameter('contact_damage_per_event').value,
+            'moving_obstacle_contact_damage': self.get_parameter('moving_obstacle_contact_damage').value,
+            'saw_blade_contact_damage': self.get_parameter('saw_blade_contact_damage').value,
+            'flip_damage': self.get_parameter('flip_damage_per_event').value,
+            'weapon_damage_saw': self.get_parameter('weapon_damage_saw').value,
         }
-        self.flip_threshold_roll_rad = math.radians(self.get_parameter('flip_threshold_roll_deg').get_parameter_value().double_value)
-        self.flip_threshold_pitch_rad = math.radians(self.get_parameter('flip_threshold_pitch_deg').get_parameter_value().double_value)
+        self.flip_threshold_roll_rad = math.radians(self.get_parameter('flip_threshold_roll_deg').value)
+        self.flip_threshold_pitch_rad = math.radians(self.get_parameter('flip_threshold_pitch_deg').value)
 
-        # Initialize health for each bot
-        self.robot_health = {
-            "battlebot": self.initial_health,
-            "moving_obstacle": self.initial_health,
-            # 만약 saw_blade_1, saw_blade_2도 체력이 있다면 여기에 추가
-            # "saw_blade_1": self.initial_health,
-            # "saw_blade_2": self.initial_health,
-        }
+        # --- 수정: ROS Duration 객체로 쿨다운 시간 설정 및 ROS 시간으로 초기화 ---
+        hit_interval_sec = self.get_parameter('hit_interval').value
+        self.hit_interval_duration = Duration(seconds=hit_interval_sec)
+        
+        # Robots
+        self.robots = ["battlebot_1", "battlebot_2"]
+        now = self.get_clock().now()
+        self.robot_health = {name: self.initial_health for name in self.robots}
+        self.is_destroyed = {name: False for name in self.robots}
+        self.last_hit_time = {name: now for name in self.robots} # ROS 시간으로 초기화
+        self.is_flipped = {name: False for name in self.robots}
 
-        # Subscribers for contact sensors
-        self.contact_sub_battlebot = self.create_subscription(
-            ContactsState,
-            "/battlebot/contact", # URDF 플러그인의 bumperTopicName과 일치하는지 확인!
-            lambda msg: self.process_contact("battlebot", "moving_obstacle", msg), # battlebot이 moving_obstacle을 공격
-            10
-        )
-        self.contact_sub_obstacle = self.create_subscription(
-            ContactsState,
-            "/moving_obstacle/contact", # moving_obstacle의 URDF 플러그인 토픽 확인
-            lambda msg: self.process_contact("moving_obstacle", "battlebot", msg), # moving_obstacle이 battlebot을 공격
-            10
-        )
-        # saw_blade_1과 saw_blade_2의 접촉 센서 구독 추가
-        self.contact_sub_saw_blade_1 = self.create_subscription(
-            ContactsState,
-            "/saw_blade_1/contact", # saw_blade_1의 URDF 플러그인 토픽 확인 (아마도 /saw_blade_1/contact_sensor 일 수도 있음)
-            lambda msg: self.process_contact("saw_blade_1", "battlebot", msg), # saw_blade_1이 battlebot을 공격
-            10
-        )
-        self.contact_sub_saw_blade_2 = self.create_subscription(
-            ContactsState,
-            "/saw_blade_2/contact", # saw_blade_2의 URDF 플러그인 토픽 확인
-            lambda msg: self.process_contact("saw_blade_2", "battlebot", msg), # saw_blade_2가 battlebot을 공격
-            10
-        )
+        # Subscribers (중복 구독 정리)
+        self.create_subscription(ContactsState, "/saw_blade_1/contact", self.process_saw_blade_contact, 10)
+        self.create_subscription(ContactsState, "/saw_blade_2/contact", self.process_saw_blade_contact, 10)
 
+        self.create_subscription(ContactsState, "/battlebot_1/contact", lambda msg: self.process_contact("battlebot_1", "battlebot_2", msg), 10)
+        self.create_subscription(ContactsState, "/battlebot_2/contact", lambda msg: self.process_contact("battlebot_2", "battlebot_1", msg), 10)
+        self.create_subscription(ContactsState, "/moving_obstacle/contact", lambda msg: self.process_contact("moving_obstacle", "battlebot_2", msg), 10)
 
-        # Subscribers for IMU sensors
-        self.imu_sub_battlebot = self.create_subscription(
-            Imu,
-            "/battlebot/imu", # URDF 플러그인의 topicName과 일치하는지 확인!
-            lambda msg: self.check_flip("battlebot", msg),
-            10
-        )
-        self.imu_sub_obstacle = self.create_subscription(
-            Imu,
-            "/moving_obstacle/imu", # moving_obstacle의 URDF 플러그인 토픽 확인
-            lambda msg: self.check_flip("moving_obstacle", msg),
-            10
-        )
-        # saw_blade들은 IMU가 없을 수 있으므로 일단 추가하지 않음
+        self.create_subscription(Imu, "/battlebot_1/imu", lambda msg: self.check_flip("battlebot_1", msg), 10)
+        self.create_subscription(Imu, "/battlebot_2/imu", lambda msg: self.check_flip("battlebot_2", msg), 10)
 
-        # Publishers for health
-        self.health_pub_battlebot = self.create_publisher(Float32, "/battlebot/health", 10)
-        self.health_pub_obstacle = self.create_publisher(Float32, "/moving_obstacle/health", 10)
-        # 만약 saw_blade_1, saw_blade_2도 체력이 있다면 퍼블리셔 추가
-        # self.health_pub_saw_blade_1 = self.create_publisher(Float32, "/saw_blade_1/health", 10)
-        # self.health_pub_saw_blade_2 = self.create_publisher(Float32, "/saw_blade_2/health", 10)
-
-
-        # Timer to periodically publish health (optional, can be done on contact/imu callback)
+        # Publishers
+        self.health_pub = {name: self.create_publisher(Float32, f"/{name}/health", 10) for name in self.robots}
         self.timer = self.create_timer(0.5, self.publish_health)
 
-        self.get_logger().info("DamageCalculator node started.")
+        self.get_logger().info("[INIT] Battlesim started.")
+        self.get_logger().info(f"[INIT] Damage Cooldown: {hit_interval_sec:.3f} seconds")
+        self.get_logger().info(f"[INIT] battlebot_1 HP: {self.robot_health['battlebot_1']} | battlebot_2 HP: {self.robot_health['battlebot_2']}")
 
-        # To track if a robot is currently flipped
-        self.is_flipped = {
-            "battlebot": False,
-            # "moving_obstacle": False,
-            # "saw_blade_1": False,
-            # "saw_blade_2": False,
-        }
-
-    def process_contact(self, attacker_bot_name, target_bot_name, msg):
+    def process_saw_blade_contact(self, msg):
+        """톱날 충돌을 처리하는 별도 콜백 함수 (saw_blade_1, saw_blade_2 모두 처리)"""
         if msg.states:
-            for contact_state in msg.states:
-                # Check if the contact involves the other robot (or its parts)
-                target_hit = (target_bot_name in contact_state.collision1_name or
-                              target_bot_name in contact_state.collision2_name)
+            for state in msg.states:
+                collision1_name = state.collision1_name
+                collision2_name = state.collision2_name
 
-                if target_hit:
-                    self.get_logger().info(f"{attacker_bot_name} detected contact with {target_bot_name}!")
+                # 공격자와 타겟 식별
+                attacker = None
+                target = None
 
-                    damage_amount = 0.0
-                    
-                    # Case 1: moving_obstacle hits battlebot
-                    if attacker_bot_name == "moving_obstacle" and target_bot_name == "battlebot":
-                        damage_amount = self.damage_config['moving_obstacle_contact_damage']
-                        self.get_logger().info(f"Moving obstacle hit battlebot! Damage: {damage_amount}")
-                    
-                    # Case 2: saw_blade_1 or saw_blade_2 hits battlebot
-                    elif (attacker_bot_name == "saw_blade_1" or attacker_bot_name == "saw_blade_2") \
-                         and target_bot_name == "battlebot":
-                        damage_amount = self.damage_config['saw_blade_contact_damage'] # <--- 여기에 톱날 데미지 적용
-                        self.get_logger().info(f"{attacker_bot_name} hit battlebot! Damage: {damage_amount}")
-                    
-                    # Case 3: battlebot hits something (moving_obstacle, saw_blade_1, saw_blade_2, etc.)
-                    # 이 부분은 battlebot의 무기(saw, hammer)에 의한 공격을 처리합니다.
-                    elif attacker_bot_name == "battlebot":
-                        saw_hit_by_battlebot = ("saw" in contact_state.collision1_name or
-                                                "saw" in contact_state.collision2_name)
+                if "saw_blade_1" in collision1_name or "saw_blade_1" in collision2_name:
+                    attacker = "saw_blade_1"
+                elif "saw_blade_2" in collision1_name or "saw_blade_2" in collision2_name:
+                    attacker = "saw_blade_2"
+
+                if "battlebot_1" in collision1_name or "battlebot_1" in collision2_name:
+                    target = "battlebot_1"
+                elif "battlebot_2" in collision1_name or "battlebot_2" in collision2_name:
+                    target = "battlebot_2"
+                
+                # 유효한 공격자와 타겟이 식별되었을 경우에만 데미지 처리 함수 호출
+                if attacker and target:
+                    self.process_contact(attacker, target, msg)
+    # ---------------------------------------------------------------
 
 
-                        if saw_hit_by_battlebot:
-                            damage_amount = self.damage_config['weapon_damage_saw']
-                            self.get_logger().info(f"{attacker_bot_name}'s saw hit {target_bot_name}! Damage: {damage_amount}")
-                        else:
-                            # General body contact by battlebot
-                            damage_amount = self.damage_config['contact_damage']
-                            self.get_logger().info(f"{attacker_bot_name} body hit {target_bot_name}! Damage: {damage_amount}")
-                    
-                    # If damage_amount is still 0.0 (e.g., obstacles hitting each other, or other cases not handled)
-                    if damage_amount == 0.0:
-                        self.get_logger().debug(f"No specific damage rule for {attacker_bot_name} hitting {target_bot_name}.")
-                        continue # 이 충돌 이벤트는 데미지 적용 없이 건너뜀
+    def process_contact(self, attacker, target, msg):
+        if self.is_destroyed.get(target, True):
+            return
 
-                    self.robot_health[target_bot_name] -= damage_amount
+        # --- 수정: ROS 시간을 사용하여 쿨다운을 확인 ---
+        now = self.get_clock().now()
+        if now - self.last_hit_time[target] < self.hit_interval_duration:
+            return
 
-                    # Ensure health doesn't go below zero
-                    if self.robot_health[target_bot_name] < 0:
-                        self.robot_health[target_bot_name] = 0
-                        self.get_logger().warn(f"{target_bot_name} health reached 0!")
+        if msg.states:
+            for state in msg.states:
+                # collision1_name과 collision2_name에 타겟이 있는지 정확히 확인
+                target_in_collision = False
+                if target in state.collision1_name and attacker in state.collision2_name:
+                    target_in_collision = True
+                elif target in state.collision2_name and attacker in state.collision1_name:
+                    target_in_collision = True
 
-                    self.publish_health() # Publish health immediately after damage
-                    break # Only apply damage once per contact event, to avoid multiple hits from one contact event
+                if not target_in_collision:
+                    continue
+                
+                damage = 0.0
 
-    def check_flip(self, bot_name, msg):
-        # Convert quaternion to RPY
+                if attacker == "moving_obstacle":
+                    damage = self.damage_config['moving_obstacle_contact_damage']
+                elif attacker.startswith("saw_blade"):
+                    damage = self.damage_config['saw_blade_contact_damage']
+                elif attacker.startswith("battlebot"):
+                    # 무기 이름은 보통 링크 이름의 일부로 들어감
+                    attacker_weapon_part = state.collision1_name if attacker in state.collision1_name else state.collision2_name
+                    if "saw" in attacker_weapon_part:
+                        damage = self.damage_config['weapon_damage_saw']
+                    else:
+                        damage = self.damage_config['contact_damage']
+
+                if damage == 0.0:
+                    continue
+
+                self.robot_health[target] -= damage
+                self.last_hit_time[target] = now # 마지막 공격 시간을 ROS 시간으로 업데이트
+                
+                if self.robot_health[target] <= 0.0:
+                    self.robot_health[target] = 0.0
+                    self.is_destroyed[target] = True
+                    self.get_logger().warn(f"[DESTROYED] {target} has been destroyed!")
+                    self.print_result()
+                else:
+                    self.get_logger().info(f"[HIT] {attacker} → {target} | Damage: {damage} | HP: {self.robot_health[target]:.1f}")
+                
+                self.publish_health()
+                break # 한 번의 콜백에서 한 번의 데미지만 처리
+
+    def check_flip(self, name, msg):
+        if self.is_destroyed[name]:
+            return
+
         orientation_q = msg.orientation
-        orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]
-        (roll, pitch, yaw) = euler_from_quaternion(orientation_list)
+        q = [orientation_q.w, orientation_q.x, orientation_q.y, orientation_q.z]
+        roll, pitch, _ = quat2euler(q, axes='sxyz')
 
-        # Check if the robot is flipped
         if abs(roll) > self.flip_threshold_roll_rad or abs(pitch) > self.flip_threshold_pitch_rad:
-            if not self.is_flipped[bot_name]:
-                self.robot_health[bot_name] -= self.damage_config['flip_damage']
-                self.get_logger().warn(f"{bot_name} is FLIPPED! Health: {self.robot_health[bot_name]:.2f}")
-                self.is_flipped[bot_name] = True
+            if not self.is_flipped[name]:
+                # 뒤집힘 데미지에도 쿨다운을 적용하려면 last_hit_time을 확인
+                now = self.get_clock().now()
+                if now - self.last_hit_time[name] < self.hit_interval_duration:
+                    return
+
+                self.robot_health[name] -= self.damage_config['flip_damage']
+                self.last_hit_time[name] = now # 뒤집힘 데미지도 쿨다운에 포함
+
+                if self.robot_health[name] <= 0:
+                    self.robot_health[name] = 0
+                    self.is_destroyed[name] = True
+                    self.get_logger().warn(f"[DESTROYED] {name} has been destroyed!")
+                    self.print_result()
+                else:
+                    self.get_logger().warn(f"[HIT] {name} flipped! Damage: {self.damage_config['flip_damage']} | HP: {self.robot_health[name]:.1f}")
+                
+                self.is_flipped[name] = True
                 self.publish_health()
         else:
-            # Robot is no longer flipped
-            self.is_flipped[bot_name] = False
+            self.is_flipped[name] = False
 
     def publish_health(self):
-        health_msg = Float32()
+        for name in self.robots:
+            msg = Float32()
+            msg.data = self.robot_health[name]
+            self.health_pub[name].publish(msg)
 
-        # Publish battlebot health
-        health_msg.data = self.robot_health["battlebot"]
-        self.health_pub_battlebot.publish(health_msg)
+    def print_result(self):
+        # 두 로봇이 모두 파괴되었는지 확인
+        if all(self.is_destroyed.values()):
+            winner = None
+            if self.robot_health["battlebot_1"] > self.robot_health["battlebot_2"]:
+                winner = "battlebot_1"
+            elif self.robot_health["battlebot_2"] > self.robot_health["battlebot_1"]:
+                winner = "battlebot_2"
 
-        # Publish moving_obstacle health (if it exists)
-        if "moving_obstacle" in self.robot_health:
-            health_msg.data = self.robot_health["moving_obstacle"]
-            self.health_pub_obstacle.publish(health_msg)
+            self.get_logger().info("[END] Simulation ended.")
+            if winner:
+                self.get_logger().info(f"[RESULT] Winner: {winner}")
+            else:
+                self.get_logger().info("[RESULT] Draw.")
+            # rclpy.shutdown() # 필요시 노드 종료
 
-        # 만약 saw_blade_1, saw_blade_2도 체력이 있다면 여기에 추가
-        # if "saw_blade_1" in self.robot_health:
-        #     health_msg.data = self.robot_health["saw_blade_1"]
-        #     self.health_pub_saw_blade_1.publish(health_msg)
-        # if "saw_blade_2" in self.robot_health:
-        #     health_msg.data = self.robot_health["saw_blade_2"]
-        #     self.health_pub_saw_blade_2.publish(health_msg)
+        # 한쪽만 파괴되었을 때
+        elif self.is_destroyed["battlebot_1"]:
+            self.get_logger().info("[END] Simulation ended.")
+            self.get_logger().info("[RESULT] Winner: battlebot_2")
+        elif self.is_destroyed["battlebot_2"]:
+            self.get_logger().info("[END] Simulation ended.")
+            self.get_logger().info("[RESULT] Winner: battlebot_1")
 
 
 def main(args=None):
     rclpy.init(args=args)
-    damage_calculator = DamageCalculator()
-    rclpy.spin(damage_calculator)
-    damage_calculator.destroy_node()
-    rclpy.shutdown()
+    node = DamageCalculator()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

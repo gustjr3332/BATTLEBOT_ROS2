@@ -42,7 +42,7 @@ def generate_launch_description():
         battlebot_2_urdf_content = file.read()
 
     # battlebot_1의 robot_state_publisher
-    battlebot_rsp_node = Node(
+    battlebot_1_rsp_node = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
         name='battlebot_1_state_publisher', 
@@ -61,14 +61,6 @@ def generate_launch_description():
         parameters=[{'robot_description': battlebot_2_urdf_content}]
     )
 
-    # damage_calculator_node
-    damage_calculator_node = Node(
-        package='battlebot_sim',
-        executable='damage_calculator_node',
-        name='damage_calculator',
-        output='screen',
-        parameters=[params_file_path]
-    )
 
     # spawn_entity (Gazebo 서비스가 완전히 준비될 때까지 딜레이)
     spawn_battlebot_1_entity = TimerAction(
@@ -117,29 +109,95 @@ def generate_launch_description():
         ]
     )
 
-    # dual_teleop 키보드 조작 노드 실행
-    dual_teleop_node = TimerAction(
-        period=10.0, #추가 딜레이
+    # damage_calculator_node: 로봇들이 스폰된 후 실행되도록 지연
+    damage_calculator_node = TimerAction(
+        period=7.0, # 로봇 스폰 후 실행
         actions=[
             Node(
-            package='battlebot_sim',
-            executable='dual_teleop',
-            name='dual_teleop',
-            output='screen',
-            prefix='gnome-terminal --'
+                package='battlebot_sim',
+                executable='damage_calculator_node',
+                name='damage_calculator',
+                output='screen',
+                parameters=[params_file_path],
+                prefix='gnome-terminal --' 
+            )
+        ]
+    )
+    
+    # health_monitor_terminal: damage_calculator가 토픽을 발행할 준비가 된 후 실행
+    health_monitor_terminal = TimerAction(
+        period=9.0, # damage_calculator(7초)가 실행된 후
+        actions=[
+            ExecuteProcess(
+                cmd=['bash', '-c', """
+# (내부 스크립트는 이전과 동일)
+obstacle_controller_dead=0
+teleop_dead=0
+echo "헬스 모니터링 및 자동 노드 종료 시스템 시작 (구버전 ROS2 호환 모드)..."
+# ... (이전의 긴 bash 스크립트 내용 전체) ...
+while true; do
+    bot1_dead=$(ros2 topic echo /battlebot_1/health std_msgs/msg/Float32 | head -n 3 | grep "data:" | awk '{if ($2 <= 0) print 1; else print 0}')
+    bot2_dead=$(ros2 topic echo /battlebot_2/health std_msgs/msg/Float32 | head -n 3 | grep "data:" | awk '{if ($2 <= 0) print 1; else print 0}')
+    obs_dead=$(ros2 topic echo /moving_obstacle/health std_msgs/msg/Float32 | head -n 3 | grep "data:" | awk '{if ($2 <= 0) print 1; else print 0}')
+    health1=$(ros2 topic echo /battlebot_1/health std_msgs/msg/Float32 | head -n 3 | grep "data:" | awk '{print $2}')
+    health2=$(ros2 topic echo /battlebot_2/health std_msgs/msg/Float32 | head -n 3 | grep "data:" | awk '{print $2}')
+    health3=$(ros2 topic echo /moving_obstacle/health std_msgs/msg/Float32 | head -n 3 | grep "data:" | awk '{print $2}')
+    clear
+    echo "========== REAL-TIME ROBOT HEALTH =========="
+    echo "BattleBot 1 (BLUE): $health1"
+    echo "BattleBot 2 (RED):  $health2"
+    echo "Moving Obstacle:    $health3"
+    echo "============================================"
+    echo "Monitoring... (Press Ctrl+C in this terminal to stop monitoring)"
+    if [ "$obs_dead" -eq 1 ] && [ "$obstacle_controller_dead" -eq 0 ]; then
+        echo "Moving Obstacle 파괴됨! 컨트롤러 노드를 종료합니다..."
+        kill $(ros2 node info /moving_obstacle_controller | grep 'Pid:' | awk '{print $2}') &> /dev/null
+        obstacle_controller_dead=1
+    fi
+    if { [ "$bot1_dead" -eq 1 ] || [ "$bot2_dead" -eq 1 ]; } && [ "$teleop_dead" -eq 0 ]; then
+        echo "Battlebot 파괴됨! 조종 노드를 종료합니다..."
+        kill $(ros2 node info /dual_teleop | grep 'Pid:' | awk '{print $2}') &> /dev/null
+        teleop_dead=1
+    fi
+    sleep 1
+done
+"""],
+                shell=True,
+                output='screen',
+                name='health_monitor_terminal',
+                # 터미널에서 실행되도록 gnome-terminal로 감싸기
+                prefix='gnome-terminal --'
             )
         ]
     )
 
+    # dual_teleop 키보드 조작 노드 실행 (가장 마지막에 실행)
+    dual_teleop_node = TimerAction(
+        period=10.0,
+        actions=[
+            Node(
+                package='battlebot_sim',
+                executable='dual_teleop',
+                name='dual_teleop',
+                output='screen',
+                prefix='gnome-terminal --'
+            )
+        ]
+    )
+   # damage_calculator, health_monitor, dual_teleop을 하나의 터미널에서 모두 실행 (f-string 문법 수정)
 
+
+    # --- LaunchDescription 반환 부분 ---
     return LaunchDescription([
+        # ... 기존 Gazebo 및 다른 노드들 ...
         gazebo_process,
-        battlebot_rsp_node,
-        damage_calculator_node,
+        battlebot_1_rsp_node,
+        battlebot_2_rsp_node,
         spawn_battlebot_1_entity,
         spawn_battlebot_2_entity,
+        damage_calculator_node,
         moving_obstacle_controller_node,
-        dual_teleop_node,
-        # obstacle_rsp_node, # 두 번째 로봇이 있다면 활성화
-        # spawn_obstacle_entity, # 두 번째 로봇이 있다면 활성화
+        health_monitor_terminal,
+        dual_teleop_node
+
     ])
