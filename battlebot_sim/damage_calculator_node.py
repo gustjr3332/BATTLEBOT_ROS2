@@ -137,15 +137,11 @@ class DamageCalculator(Node):
                     elif attacker_bot_name == "battlebot":
                         saw_hit_by_battlebot = ("saw" in contact_state.collision1_name or
                                                 "saw" in contact_state.collision2_name)
-                        hammer_hit_by_battlebot = ("hammer" in contact_state.collision1_name or
-                                                   "hammer" in contact_state.collision2_name)
+
 
                         if saw_hit_by_battlebot:
                             damage_amount = self.damage_config['weapon_damage_saw']
                             self.get_logger().info(f"{attacker_bot_name}'s saw hit {target_bot_name}! Damage: {damage_amount}")
-                        elif hammer_hit_by_battlebot:
-                            damage_amount = self.damage_config['weapon_damage_hammer']
-                            self.get_logger().info(f"{attacker_bot_name}'s hammer hit {target_bot_name}! Damage: {damage_amount}")
                         else:
                             # General body contact by battlebot
                             damage_amount = self.damage_config['contact_damage']

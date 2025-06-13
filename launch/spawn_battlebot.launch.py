@@ -126,7 +126,7 @@ def generate_launch_description():
             executable='dual_teleop',
             name='dual_teleop',
             output='screen',
-            prefix=['x-terminal-emulator', ' -e'] # 기본 터미널에서 새 창으로 실행
+            prefix='gnome-terminal --'
             )
         ]
     )
