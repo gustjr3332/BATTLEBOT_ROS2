@@ -18,7 +18,7 @@ class DamageCalculator(Node):
         self.declare_parameter('hit_interval', 1.0 / 3.0) # 1초에 3번 데미지
         self.declare_parameter('initial_health', 100.0)
         self.declare_parameter('contact_damage_per_event', 1.0)
-        self.declare_parameter('moving_obstacle_contact_damage', 5.0)
+        self.declare_parameter('moving_obstacle_contact_damage', 1.0)
         self.declare_parameter('saw_blade_contact_damage', 5.0)
         self.declare_parameter('flip_damage_per_event', 99.0)
         self.declare_parameter('weapon_damage_saw', 10.0)
@@ -122,14 +122,18 @@ class DamageCalculator(Node):
                     damage = self.damage_config['moving_obstacle_contact_damage']
                 elif attacker.startswith("saw_blade"):
                     damage = self.damage_config['saw_blade_contact_damage']
+                 # 배틀봇 간의 충돌을 처리하는 부분
                 elif attacker.startswith("battlebot"):
-                    # 무기 이름은 보통 링크 이름의 일부로 들어감
-                    attacker_weapon_part = state.collision1_name if attacker in state.collision1_name else state.collision2_name
-                    if "saw" in attacker_weapon_part:
+                    # 충돌에 연관된 두 파트(coll1, coll2)의 이름을 모두 확인하여 'saw'가 있는지 검사합니다.
+                    # 이를 통해 어떤 로봇의 센서에서 충돌이 감지되더라도 무기 공격을 정확히 판별할 수 있습니다.
+                    is_weapon_hit = "saw" in state.collision1_name or "saw" in state.collision2_name
+                    
+                    if is_weapon_hit:
+                        # 한쪽이라도 'saw'가 포함되어 있으면 무기 데미지를 적용합니다.
                         damage = self.damage_config['weapon_damage_saw']
                     else:
+                        # 둘 다 'saw'가 없으면 일반 충돌 데미지를 적용합니다.
                         damage = self.damage_config['contact_damage']
-
                 if damage == 0.0:
                     continue
 

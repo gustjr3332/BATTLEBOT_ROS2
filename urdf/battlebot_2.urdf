@@ -1,24 +1,12 @@
 <?xml version="1.0"?>
 <robot name="battlebot_2">
 
-  <!-- Material definitions -->
-  <material name="blue">
-    <color rgba="0 0 0.8 1"/>
-  </material>
-  <material name="red">
-    <color rgba="0.8 0 0 1"/>
-  </material>
-  <material name="black">
-    <color rgba="0.1 0.1 0.1 1"/>
-  </material>
-  <material name="grey">
-    <color rgba="0.7 0.7 0.7 1"/>
-  </material>
-   <material name="yellow">
-   <color rgba="1 1 0 1"/>
-  </material>
+  <material name="blue"><color rgba="0 0 0.8 1"/></material>
+  <material name="red"><color rgba="0.8 0 0 1"/></material>
+  <material name="black"><color rgba="0.1 0.1 0.1 1"/></material>
+  <material name="grey"><color rgba="0.7 0.7 0.7 1"/></material>
+  <material name="yellow"><color rgba="1 1 0 1"/></material>
 
-  <!-- Base link -->
   <link name="base_link">
     <inertial>
       <origin xyz="0 0 0.2" rpy="0 0 0"/>
@@ -28,7 +16,7 @@
     <visual>
       <origin xyz="0 0 0.2" rpy="0 0 0"/>
       <geometry><box size="1.0 0.8 0.4"/></geometry>
-      <material name="blue"/>
+      <material name="red"/>
     </visual>
     <collision name="base_link_collision">
       <origin xyz="0 0 0.2" rpy="0 0 0"/>
@@ -36,107 +24,85 @@
     </collision>
   </link>
 
-  <!-- Left wheel -->
   <link name="left_wheel">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="1.5"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/><mass value="3"/>
       <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
     </inertial>
     <visual>
-      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
-      <geometry><cylinder radius="0.2" length="0.1"/></geometry>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/><geometry><cylinder radius="0.2" length="0.1"/></geometry>
       <material name="black"/>
     </visual>
     <collision name="left_wheel_collision">
-      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
-      <geometry><cylinder radius="0.2" length="0.1"/></geometry>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/><geometry><cylinder radius="0.2" length="0.1"/></geometry>
     </collision>
   </link>
 
-  <!-- Right wheel -->
   <link name="right_wheel">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="1.5"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/><mass value="3"/>
       <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
     </inertial>
     <visual>
-      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
-      <geometry><cylinder radius="0.2" length="0.1"/></geometry>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/><geometry><cylinder radius="0.2" length="0.1"/></geometry>
       <material name="black"/>
     </visual>
     <collision name="right_wheel_collision">
-      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
-      <geometry><cylinder radius="0.2" length="0.1"/></geometry>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/><geometry><cylinder radius="0.2" length="0.1"/></geometry>
     </collision>
   </link>
 
-  <!-- Saw link -->
   <link name="saw_link">
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="0.6"/>
-      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      <mass value="1"/>
+      <inertia ixx="0.02" ixy="0" ixz="0" iyy="0.02" iyz="0" izz="0.02"/>
     </inertial>
     <visual>
-      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
-      <geometry><cylinder radius="0.2" length="0.02"/></geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="model://saw_blade_1/meshes/Sawblade.dae" scale="2 2 1"/>
+      </geometry>
       <material name="grey"/>
     </visual>
     <collision name="battlebot_saw_collision">
-      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
-      <geometry><cylinder radius="0.2" length="0.02"/></geometry>
-    </collision>
-  </link>
-
-  <!-- Contact sensor link -->
-  <link name="contact_sensor_link">
-    <inertial>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="0.03"/>
-      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
-    </inertial>
-    <visual>
-      <geometry><box size="0.1 0.2 0.1"/></geometry>
-      <material name="red"/>
-    </visual>
-    <collision name="battlebot_front_bumper_collision">
-      <origin xyz="-0.5 0 0" rpy="0 0 0"/>
-      <geometry><box size="1.01 0.81 0.41"/></geometry>
+      <geometry>
+        <cylinder radius="0.55" length="0.02"/>
+      </geometry>
     </collision>
   </link>
 
-  <!-- Joint definitions -->
   <joint name="left_wheel_joint" type="continuous">
-    <parent link="base_link"/>
-    <child link="left_wheel"/>
-    <origin xyz="0 0.45 0.1" rpy="0 0 0"/>
+    <parent link="base_link"/><child link="left_wheel"/>
+    <origin xyz="0 0.45 0.18" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
   </joint>
   <joint name="right_wheel_joint" type="continuous">
-    <parent link="base_link"/>
-    <child link="right_wheel"/>
-    <origin xyz="0 -0.45 0.1" rpy="0 0 0"/>
+    <parent link="base_link"/><child link="right_wheel"/>
+    <origin xyz="0 -0.45 0.18" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
   </joint>
-  <joint name="saw_joint" type="fixed">
-    <parent link="base_link"/>
+
+  <joint name="saw_joint" type="fixed"> <parent link="base_link"/>
     <child link="saw_link"/>
     <origin xyz="0.4 0 0.3" rpy="0 0 0"/>
-  </joint>
-  <joint name="contact_sensor_joint" type="fixed">
-    <parent link="base_link"/>
-    <child link="contact_sensor_link"/>
-    <origin xyz="0.5 0 0.2" rpy="0 0 0"/>
-  </joint>
+    <axis xyz="1 0 0"/> </joint>
 
-  <!-- Gazebo plugins -->
+  <!-- <transmission name="saw_joint_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="saw_joint">
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="saw_joint_motor">
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission> -->
+
   <gazebo>
     <plugin name="diff_drive" filename="libgazebo_ros_diff_drive.so">
-      <ros>
-        <namespace>/battlebot_2</namespace>
-      </ros>
+      <ros><namespace>/battlebot_2</namespace></ros>
       <left_joint>left_wheel_joint</left_joint>
       <right_joint>right_wheel_joint</right_joint>
       <wheel_separation>0.9</wheel_separation>
@@ -150,67 +116,35 @@
       <publish_odom>true</publish_odom>
       <publish_odom_tf>true</publish_odom_tf>
     </plugin>
+    
   </gazebo>
 
-  <gazebo reference="contact_sensor_link">
+  <gazebo reference="base_link">
+    <material>Gazebo/Red</material>
+    <mu1>1.0</mu1><mu2>1.0</mu2>
     <sensor name="main_contact_sensor" type="contact">
-      <always_on>true</always_on>
-      <update_rate>3</update_rate>
-      <contact>
-        <collision>battlebot_front_bumper_collision</collision>
-      </contact>
+      <always_on>true</always_on><update_rate>3</update_rate>
+      <contact><collision>base_link_collision</collision></contact>
       <plugin name="gazebo_ros_bumper_main" filename="libgazebo_ros_bumper.so">
-        <ros>
-          <namespace>/battlebot_2</namespace>
-          <remapping>bumper_states:=contact</remapping>
-        </ros>
-        <frame_name>contact_sensor_link</frame_name>
+        <ros><namespace>/battlebot_2</namespace><remapping>bumper_states:=contact</remapping></ros>
+        <frame_name>base_link</frame_name>
       </plugin>
     </sensor>
   </gazebo>
-
+  
+  <gazebo reference="left_wheel"><material>Gazebo/Black</material><mu1>1.0</mu1><mu2>1.0</mu2></gazebo>
+  <gazebo reference="right_wheel"><material>Gazebo/Black</material><mu1>1.0</mu1><mu2>1.0</mu2></gazebo>
+  
   <gazebo reference="saw_link">
+    <material>Gazebo/Grey</material>
+    <mu1>1.0</mu1><mu2>1.0</mu2>
     <sensor name="saw_contact_sensor" type="contact">
-      <always_on>true</always_on>
-      <update_rate>3</update_rate>
-      <contact>
-        <collision>battlebot_saw_collision</collision>
-      </contact>
+      <always_on>true</always_on><update_rate>3</update_rate>
+      <contact><collision>battlebot_saw_collision</collision></contact>
       <plugin name="gazebo_ros_bumper_saw_plugin" filename="libgazebo_ros_bumper.so">
-        <ros>
-          <namespace>/battlebot_2</namespace>
-          <remapping>bumper_states:=saw_contact</remapping>
-        </ros>
+        <ros><namespace>/battlebot_2</namespace><remapping>bumper_states:=saw_contact</remapping></ros>
         <frame_name>saw_link</frame_name>
       </plugin>
     </sensor>
   </gazebo>
-
-  <!-- Material and physics -->
-  <gazebo reference="base_link">
-    <material>Gazebo/Blue</material>
-    <mu1>1.0</mu1>
-    <mu2>1.0</mu2>
-  </gazebo>
-  <gazebo reference="left_wheel">
-    <material>Gazebo/Black</material>
-    <mu1>1.0</mu1>
-    <mu2>1.0</mu2>
-  </gazebo>
-  <gazebo reference="right_wheel">
-    <material>Gazebo/Black</material>
-    <mu1>1.0</mu1>
-    <mu2>1.0</mu2>
-  </gazebo>
-  <gazebo reference="saw_link">
-    <material>Gazebo/Grey</material>
-    <mu1>1.0</mu1>
-    <mu2>1.0</mu2>
-  </gazebo>
-  <gazebo reference="contact_sensor_link">
-    <material>Gazebo/Red</material>
-    <mu1>1.0</mu1>
-    <mu2>1.0</mu2>
-  </gazebo>
-
 </robot>

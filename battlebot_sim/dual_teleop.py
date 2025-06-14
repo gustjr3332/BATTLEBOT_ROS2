@@ -31,9 +31,9 @@ class DualTeleop(Node):
 
         # robot1 control: w/a/s/d
         if key == 'w':
-            twist1.linear.x = 0.5
+            twist1.linear.x = 0.75
         elif key == 's':
-            twist1.linear.x = -0.5
+            twist1.linear.x = -0.75
         elif key == 'a':
             twist1.angular.z = 1.0
         elif key == 'd':
@@ -41,9 +41,9 @@ class DualTeleop(Node):
 
         # robot2 control: i/j/k/l
         elif key == 'i':
-            twist2.linear.x = 0.5
+            twist2.linear.x = 0.75
         elif key == 'k':
-            twist2.linear.x = -0.5
+            twist2.linear.x = -0.75
         elif key == 'j':
             twist2.angular.z = 1.0
         elif key == 'l':
