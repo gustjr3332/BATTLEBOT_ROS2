@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<robot name="debug_bot">
+  <link name="base_link">
+    <inertial>
+      <mass value="10.0"/>
+      <inertia ixx="1.0" ixy="0" ixz="0" iyy="1.0" iyz="0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <geometry><box size="0.5 0.5 0.5"/></geometry>
+    </visual>
+    <collision name="base_link_collision">
+      <geometry><box size="0.5 0.5 0.5"/></geometry>
+    </collision>
+  </link>
+  <gazebo reference="base_link">
+    <sensor name="contact_sensor" type="contact">
+      <always_on>true</always_on>
+      <update_rate>10</update_rate>
+      <contact>
+        <collision>base_link_collision</collision>
+      </contact>
+      <plugin name="gazebo_ros_bumper" filename="libgazebo_ros_bumper.so">
+        <ros>
+          <remapping>bumper_states:=contact</remapping>
+        </ros>
+        <frame_name>base_link</frame_name>
+      </plugin>
+    </sensor>
+  </gazebo>
+</robot>

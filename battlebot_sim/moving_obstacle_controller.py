@@ -22,7 +22,6 @@ class MovingObstacleController(Node):
         self.position += self.direction * self.speed * self.timer_period
         if abs(self.position) >= self.max_distance:
             self.direction *= -1.0
-            self.get_logger().info(f'flip direction: {self.direction}')
 
 
 def main(args=None):
