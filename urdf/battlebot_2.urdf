@@ -3,24 +3,24 @@
 
   <link name="base_link">
     <visual>
-      <origin xyz="0 0 0.05" rpy="0 0 0"/>
+      <origin xyz="0 0 0.22" rpy="0 0 0"/>
       <geometry>
-        <box size="0.8 0.5 0.2"/>
+        <box size="1.3 0.9 0.3"/>
       </geometry>
-      <material name="blue">
-        <color rgba="0.2 0.4 0.8 1"/>
+      <material name="red">
+        <color rgba="1 0 0 1"/>
       </material>
     </visual>
     <collision>
-      <origin xyz="0 0 0.05" rpy="0 0 0"/>
+      <origin xyz="0 0 0.22" rpy="0 0 0"/>
       <geometry>
-        <box size="0.8 0.5 0.2"/>
+        <box size="1.3 0.9 0.3"/>
       </geometry>
     </collision>
     <inertial>
-      <origin xyz="0 0 0.05" rpy="0 0 0"/>
-      <mass value="10.0"/>
-      <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
+      <origin xyz="0 0 0.22" rpy="0 0 0"/>
+      <mass value="15.0"/>
+      <inertia ixx="5.0" ixy="0.0" ixz="0.0" iyy="5.0" iyz="0.0" izz="5.0"/>
     </inertial>
   </link>
 
@@ -28,7 +28,7 @@
     <visual>
       <origin rpy="1.5707 0 0"/>
       <geometry>
-        <cylinder radius="0.15" length="0.05"/>
+        <cylinder radius="0.24" length="0.1"/>
       </geometry>
       <material name="black">
         <color rgba="0.1 0.1 0.1 1"/>
@@ -37,7 +37,7 @@
     <collision>
       <origin rpy="1.5707 0 0"/>
       <geometry>
-        <cylinder radius="0.15" length="0.05"/>
+        <cylinder radius="0.24" length="0.1"/>
       </geometry>
     </collision>
     <inertial>
@@ -50,14 +50,14 @@
     <visual>
       <origin rpy="1.5707 0 0"/>
       <geometry>
-        <cylinder radius="0.15" length="0.05"/>
+        <cylinder radius="0.24" length="0.1"/>
       </geometry>
       <material name="black"/>
     </visual>
     <collision>
       <origin rpy="1.5707 0 0"/>
       <geometry>
-        <cylinder radius="0.15" length="0.05"/>
+        <cylinder radius="0.24" length="0.1"/>
       </geometry>
     </collision>
     <inertial>
@@ -69,14 +69,14 @@
   <joint name="left_wheel_joint" type="continuous">
     <parent link="base_link"/>
     <child link="left_wheel_link"/>
-    <origin xyz="0.0 0.275 0" rpy="0 0 0"/>
+    <origin xyz="0.0 0.525 0.2" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
   </joint>
 
   <joint name="right_wheel_joint" type="continuous">
     <parent link="base_link"/>
     <child link="right_wheel_link"/>
-    <origin xyz="0.0 -0.275 0" rpy="0 0 0"/>
+    <origin xyz="0.0 -0.525 0.2" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
   </joint>
 
@@ -87,8 +87,8 @@
       </ros>
       <left_joint>left_wheel_joint</left_joint>
       <right_joint>right_wheel_joint</right_joint>
-      <wheel_separation>0.55</wheel_separation>
-      <wheel_diameter>0.3</wheel_diameter>
+      <wheel_separation>1.05</wheel_separation>
+      <wheel_diameter>0.48</wheel_diameter>
       <max_wheel_torque>200</max_wheel_torque>
       <command_topic>cmd_vel</command_topic>
       <odometry_topic>odom</odometry_topic>
@@ -102,18 +102,44 @@
     <kd>100.0</kd>
     <minDepth>0.001</minDepth>
     <maxVel>1.0</maxVel>
-    <material>Gazebo/Blue</material> <sensor name="contact_sensor" type="contact">
+    <material>Gazebo/Red</material>
+
+    <sensor name="contact_sensor" type="contact">
       <always_on>true</always_on>
-      <update_rate>3</update_rate> <contact>
+      <update_rate>30</update_rate>
+      <contact>
         <collision>base_link_collision</collision>
       </contact>
-      <namespace>/battlebot_2</namespace>
       <plugin name="gazebo_ros_bumper" filename="libgazebo_ros_bumper.so">
         <ros>
+          <namespace>/battlebot_2</namespace>
           <remapping>bumper_states:=contact</remapping>
         </ros>
         <frame_name>base_link</frame_name>
       </plugin>
+    </sensor>
+
+    <sensor name="imu_sensor" type="imu">
+      <always_on>true</always_on>
+      <update_rate>30</update_rate> <imu>
+        <angular_velocity>
+          <x><noise type="gaussian"><mean>0.0</mean><stddev>0.001</stddev></noise></x>
+          <y><noise type="gaussian"><mean>0.0</mean><stddev>0.001</stddev></noise></y>
+          <z><noise type="gaussian"><mean>0.0</mean><stddev>0.001</stddev></noise></z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x><noise type="gaussian"><mean>0.0</mean><stddev>0.01</stddev></noise></x>
+          <y><noise type="gaussian"><mean>0.0</mean><stddev>0.01</stddev></noise></y>
+          <z><noise type="gaussian"><mean>0.0</mean><stddev>0.01</stddev></noise></z>
+        </linear_acceleration>
+      </imu>
+        <plugin name="gazebo_ros_imu_sensor" filename="libgazebo_ros_imu_sensor.so">
+          <ros>
+            <namespace>/battlebot_2</namespace>
+            <remapping>~/out:=imu</remapping>
+          </ros>
+          <initial_orientation_as_reference>false</initial_orientation_as_reference>
+        </plugin>
     </sensor>
   </gazebo>
 </robot>

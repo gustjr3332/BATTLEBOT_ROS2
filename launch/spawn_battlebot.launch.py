@@ -58,7 +58,7 @@ def generate_launch_description():
 
     # --- [수정] 스폰 전 대기 시간을 8초, 9초로 늘려 안정성 확보 ---
     spawn_battlebot_1_entity = TimerAction(
-        period=8.0,
+        period=5.0,
         actions=[
             Node(
                 package='gazebo_ros',
@@ -69,7 +69,7 @@ def generate_launch_description():
         ]
     )
     spawn_battlebot_2_entity = TimerAction(
-        period=9.0,
+        period=6.0,
         actions=[
             Node(
                 package='gazebo_ros',
@@ -80,21 +80,33 @@ def generate_launch_description():
         ]
     )
 
-    # 다른 노드들 (조종 노드는 여기서 실행하지 않음)
-    moving_obstacle_controller_node = Node(
-        package='battlebot_sim',
-        executable='moving_obstacle_controller',
-        name='moving_obstacle_controller',
-        output='screen'
+     # [수정] 컨트롤러와 데미지 노드도 TimerAction으로 지연 실행
+    moving_obstacle_controller_node = TimerAction(
+        period=8.0,
+        actions=[
+            Node(
+                package='battlebot_sim',
+                executable='moving_obstacle_controller',
+                name='moving_obstacle_controller',
+                output='screen'
+            )
+        ]
     )
-    damage_calculator_node = Node(
-        package='battlebot_sim',
-        executable='damage_calculator_node',
-        name='damage_calculator',
-        output='screen',
-        parameters=[params_file_path]
+    
+    damage_calculator_node = TimerAction(
+        period=9.0,
+        actions=[
+            Node(
+                package='battlebot_sim',
+                executable='damage_calculator_node',
+                name='damage_calculator',
+                output='screen',
+                parameters=[params_file_path],
+                #prefix='[gnome-terminal --]'  
+            )
+        ]
     )
-   
+    
     return LaunchDescription([
         gazebo_process,
         battlebot_1_rsp_node,
@@ -102,5 +114,5 @@ def generate_launch_description():
         spawn_battlebot_1_entity,
         spawn_battlebot_2_entity,
         moving_obstacle_controller_node,
-        damage_calculator_node,
+        damage_calculator_node
     ])
