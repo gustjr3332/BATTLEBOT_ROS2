@@ -56,9 +56,9 @@ def generate_launch_description():
         parameters=[{'robot_description': battlebot_2_urdf_content}]
     )
 
-    # --- [수정] 스폰 전 대기 시간을 8초, 9초로 늘려 안정성 확보 ---
+    # --- [수정] 스폰 전 대기 시간을 6초, 7초로 늘려 안정성 확보 ---
     spawn_battlebot_1_entity = TimerAction(
-        period=5.0,
+        period=6.0,
         actions=[
             Node(
                 package='gazebo_ros',
@@ -69,7 +69,7 @@ def generate_launch_description():
         ]
     )
     spawn_battlebot_2_entity = TimerAction(
-        period=6.0,
+        period=7.0,
         actions=[
             Node(
                 package='gazebo_ros',
@@ -82,7 +82,7 @@ def generate_launch_description():
 
      # [수정] 컨트롤러와 데미지 노드도 TimerAction으로 지연 실행
     moving_obstacle_controller_node = TimerAction(
-        period=8.0,
+        period=9.0,
         actions=[
             Node(
                 package='battlebot_sim',
@@ -94,7 +94,7 @@ def generate_launch_description():
     )
     
     damage_calculator_node = TimerAction(
-        period=9.0,
+        period=10.0,
         actions=[
             Node(
                 package='battlebot_sim',
@@ -106,6 +106,7 @@ def generate_launch_description():
             )
         ]
     )
+    #안정성을 위해 dual_teleop 노드는 별노 터미널 수동 실행합니다.
     
     return LaunchDescription([
         gazebo_process,
