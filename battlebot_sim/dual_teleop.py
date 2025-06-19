@@ -8,27 +8,27 @@ import traceback
 
 # [추가] 터미널에 출력될 조작키 안내 문구
 MSG = """
-=====================================================
-          Dual Battlebot Teleop Controller
-=====================================================
-       (Bot 1: BLUE)        (Bot 2: RED)
------------------------------------------------------
-Moving:                  Moving:
-        w                      i
-   a    s    d            j     k     l
+===================================================================
+                Dual Battlebot Teleop Controller
+===================================================================
+            (Bot 1: BLUE)        (Bot 2: RED)
+-------------------------------------------------------------------
+            Moving:                  Moving:
+                 w                      i
+            a    s    d            j     k     l
 
-Speed Control:           Speed Control:
-   q/e (UP/DOWN)          u/o (UP/DOWN)
+            Speed Control:           Speed Control:
+            q/e (UP/DOWN)          u/o (UP/DOWN)
 
-STOP:                    STOP:
-        f                      ;
------------------------------------------------------
+            STOP:                    STOP:
+                    f                      ;
+------------------------------------------------------------------
 IMPORTANT: Press a key once to set velocity.
            Robot will keep moving with the last command.
            Press the STOP key to stop each robot.
 
 Press 'x' to quit.
-=====================================================
+===================================================================
 """
 
 class DualTeleop(Node):

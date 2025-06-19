@@ -1,11 +1,27 @@
 /**:
   ros__parameters:
+    # --- 게임 룰 파라미터 ---
+    hit_interval: 0.5                   # 초 단위, 연속적인 피격 사이의 최소 시간
     initial_health: 100.0
-    contact_damage_per_event: 1.0
-    moving_obstacle_contact_damage: 1.0
-    saw_blade_contact_damage: 5.0 
-    flip_damage_per_event: 99.0
-    weapon_damage_saw: 10.0
-    flip_threshold_roll_deg: 90.0 # Degrees
-    flip_threshold_pitch_deg: 90.0 # Degrees
-    # 데미지 노드 추가 구문
+    obstacle_initial_health: 50.0
+    heal_amount: 20.0
+
+    # --- 힘 기반 데미지 스케일링 파라미터 ---
+    # 이 힘(N) 미만의 충격은 데미지 없음
+    min_force_threshold: 100.0
+    # 이 힘(N) 이상이면 최대 데미지
+    max_force_for_scaling: 5000.0
+    # 최소 힘(200N)일 때 받는 데미지
+    min_damage_at_threshold: 1.0
+    # 최대 힘(10000N) 이상일 때 받는 데미지
+    max_damage_at_max_force: 15.0
+
+    # --- 특수 데미지 파라미터 ---
+    # 참고: 아래 값들은 힘 기반 데미지 로직과 별개로 고정값을 사용합니다.
+    flip_damage: 100.0
+    saw_blade_contact_damage: 5.0       # 외부 고정 톱날은 충격량과 상관없이 고정 데미지
+    obstacle_contact_damage: 1.0        # 장애물이 배틀봇에게 주는 고정 데미지
+    
+    # 뒤집힘 판정 파라미터
+    flip_threshold_roll_deg: 90.0       # 이 각도 이상 기울어지면 뒤집힘으로 판정
+    flip_threshold_pitch_deg: 90.0
