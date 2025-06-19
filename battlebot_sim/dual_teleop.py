@@ -39,7 +39,7 @@ class DualTeleop(Node):
 
         self.linear_speed_1 = 1.0
         self.linear_speed_2 = 1.0
-        self.max_linear_speed = 2.0
+        self.max_linear_speed = 2.5
         self.min_linear_speed = 0.5
         self.fixed_angular_speed = 1.0
         

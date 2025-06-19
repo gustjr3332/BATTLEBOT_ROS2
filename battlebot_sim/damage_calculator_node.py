@@ -56,6 +56,7 @@ class DamageCalculator(Node):
         self.is_flipped = {"battlebot_1": False, "battlebot_2": False}
         self.healing_packs_used = {"healing_pack_1": False, "healing_pack_2": False}
 
+        # 구독자 설정
         self.create_subscription(ContactsState, "/battlebot_1/contact", lambda msg: self.process_contact("battlebot_1", msg), 10)
         self.create_subscription(ContactsState, "/battlebot_1/saw_contact", lambda msg: self.process_contact("battlebot_1", msg), 10)
         self.create_subscription(ContactsState, "/battlebot_2/contact", lambda msg: self.process_contact("battlebot_2", msg), 10)
@@ -68,6 +69,7 @@ class DamageCalculator(Node):
         self.create_subscription(ContactsState, "/healing_pack_1/contact", lambda msg: self.process_heal_contact("healing_pack_1", msg), 10)
         self.create_subscription(ContactsState, "/healing_pack_2/contact", lambda msg: self.process_heal_contact("healing_pack_2", msg), 10)
 
+        # 발행자 및 서비스 클라이언트
         self.health_pubs = {name: self.create_publisher(Float32, f"/{name}/health", 10) for name in self.entities}
         self.obstacle_destroyed_pub = self.create_publisher(Empty, "/obstacle_destroyed", 10)
         self.timer = self.create_timer(0.5, self.publish_health)
@@ -84,12 +86,19 @@ class DamageCalculator(Node):
         return max_force
 
     def calculate_force_based_damage(self, force: float) -> float:
-        min_f, max_f = self.damage_config['min_force'], self.damage_config['max_force']
-        min_d, max_d = self.damage_config['min_damage'], self.damage_config['max_damage']
+        # --- [수정] 데미지 계산 시 1.5배를 적용 ---
+        damage_multiplier = 1.5
+        min_f = self.damage_config['min_force']
+        max_f = self.damage_config['max_force']
+        min_d = self.damage_config['min_damage'] * damage_multiplier
+        max_d = self.damage_config['max_damage'] * damage_multiplier
+        
         if force < min_f: return 0.0
         if force >= max_f: return max_d
+        
         ratio = (force - min_f) / (max_f - min_f)
-        return min_d + ratio * (max_d - min_d)
+        damage = min_d + ratio * (max_d - min_d)
+        return damage
         
     def process_contact(self, sensor_owner_name: str, msg: ContactsState):
         if not msg.states: return
@@ -97,6 +106,7 @@ class DamageCalculator(Node):
         all_possible_entities = self.entities + ["saw_blade_1", "saw_blade_2"]
         involved_entities = [name for name in all_possible_entities if name in coll_str]
         if len(involved_entities) < 2: return
+        
         attacker, target = None, None
         if sensor_owner_name in involved_entities:
             attacker = sensor_owner_name
@@ -104,30 +114,22 @@ class DamageCalculator(Node):
         if not (attacker and target): return
 
         damage = 0.0
-        damage_type = "Fixed" # [디버깅] 기본 데미지 타입을 '고정'으로 설정
-
         if "saw_blade" in attacker:
             damage = self.damage_config['saw_blade']
         elif attacker == "moving_obstacle":
             damage = self.damage_config['from_obstacle']
         elif "battlebot" in attacker:
-            damage_type = "Force-Based" # [디버깅] 배틀봇이 공격할 때만 타입을 '힘 기반'으로 변경
             force = self.get_max_impact_force(msg)
             damage = self.calculate_force_based_damage(force)
-            is_weapon_hit = "saw_link" in coll_str
-            if is_weapon_hit:
-                damage *= 2.0
-                damage_type += " (Weapon)"
+            # --- [수정] 톱날 무기 데미지 2배 증폭 로직 제거 ---
         
-        self.apply_damage(attacker, target, damage, damage_type)
+        self.apply_damage(attacker, target, damage)
 
-    def apply_damage(self, attacker, target, damage, damage_type="Fixed"):
+    def apply_damage(self, attacker, target, damage):
         if self.is_destroyed.get(target, True): return
         now = self.get_clock().now()
-         # --- [수정] 'flip'으로 인한 데미지는 쿨다운을 무시하도록 조건 추가 ---
         if attacker != "environment (flip)":
-            if now - self.last_hit_time.get(target, now) < self.hit_interval_duration: 
-                return
+            if now - self.last_hit_time.get(target, now) < self.hit_interval_duration: return
         if damage <= 0.0: return
 
         self.health[target] -= damage
@@ -145,9 +147,7 @@ class DamageCalculator(Node):
             else:
                 self.print_result()
         else:
-            # [수정] 로그에 데미지 타입(damage_type)을 함께 출력
-            self.get_logger().info(f"[HIT] {attacker} -> {target} | Damage: {damage:.1f} ({damage_type}) | {target} HP: {self.health[target]:.1f}")
-        
+            self.get_logger().info(f"[HIT] {attacker} -> {target} | Damage: {damage:.1f} | {target} HP: {self.health[target]:.1f}")
         self.publish_health()
     
     def process_heal_contact(self, pack_name, msg):
@@ -177,7 +177,7 @@ class DamageCalculator(Node):
         if abs(roll) > self.flip_threshold_roll_rad or abs(pitch) > self.flip_threshold_pitch_rad:
             if not self.is_flipped.get(name, False):
                 self.get_logger().warn(f"{name} flipped!")
-                self.apply_damage(attacker="environment (flip)", target=name, damage=self.damage_config['flip'], damage_type="Fixed")
+                self.apply_damage(attacker="environment (flip)", target=name, damage=self.damage_config['flip'])
                 self.is_flipped[name] = True
         else:
             if self.is_flipped.get(name, False): self.is_flipped[name] = False
