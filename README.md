@@ -22,11 +22,14 @@ ROS 2 Foxy와 Gazebo Classic을 이용한 2인용 배틀봇 시뮬레이션 프�
 * 패키지명 : battlebot_sim
 * 런치파일명 : spawn_battlebot.launch.py
 
-```bash
-cd ~/your_workspace
-colcon build
-source install/setup.bash
-ros2 launch battlebot_sim spawn_battlebot.launch.py
-ros2 run battlebot_sim dual_teleop
-
-
+  ```bash
+  cd ~/your_workspace
+  colcon build
+  source install/setup.bash
+  ros2 launch battlebot_sim spawn_battlebot.launch.py
+  
+* 새터미널
+  ```bash
+  colcon build
+  source install/setup.bash
+  ros2 run battlebot_sim dual_teleop
