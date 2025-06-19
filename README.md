@@ -1,30 +1,32 @@
-<<<<<<< HEAD
-#워크스페이스에서 git clone https://github.com/gustjr3332/BATTLEBOT_ROS2.git
-실행하면 BATTLEBOT_ROS2 패키지다운받아집니다
->>>>>>>
-=======
-# battlesim 워크스페이스 안에 battlebot_sim 패키지 기준
+# 배틀봇 시뮬레이션 (Battlebot Simulation)
 
-1. cd ~/battlesim
-2. colcon build
-3. source install/setup.bash
-4. ros2 launch battlebot_sim battlebot_sim.launch.py
-5. ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/battlebot/cmd_vel!
-6. ros2 topic echo /battlesim/health 또는 /battlesim/contact 로 state 값에 변화 확인
+ROS 2 Foxy와 Gazebo Classic을 이용한 2인용 배틀봇 시뮬레이션 프로젝트입니다.
 
-7.ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/battlebot/cmd_vel
------------------------6/1 데미지 노드 관련 사항
+## 주요 기능
+- 2대의 배틀봇을 각각 키보드로 조종
+- 충돌 시 데미지 계산 및 체력 시스템
+- 동적인 장애물 및 아이템(힐링팩) 포함
 
-주요변경사항:
+## 의존성 (Dependencies)
+이 패키지를 빌드하고 실행하기 전에 아래 패키지들이 설치되어 있어야 합니다.
+- ROS 2 Foxy
+- Gazebo 11
+- `ros-foxy-gazebo-ros-pkgs`
+- Python 라이브러리: `transforms3d`
+  ```bash
+  sudo apt-get install ros-foxy-gazebo-ros-pkgs
+  pip install transforms3d
 
 
+# 실행관련
+* 패키지명 : battlebot_sim
+* 런치파일명 : spawn_battlebot.launch.py
 
--파이썬 패키지 추가 설치 필요-
+```bash
+cd ~/your_workspace
+colcon build
+source install/setup.bash
+ros2 launch battlebot_sim spawn_battlebot.launch.py
+ros2 run battlebot_sim dual_teleop
 
-sudo apt update
 
-sudo apt install ros-foxy-tf-transformations
-
-sudo apt install python3-pip
-
-sudo pip3 install transforms3d
