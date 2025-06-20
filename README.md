@@ -30,6 +30,5 @@ ROS 2 Foxy와 Gazebo Classic을 이용한 2인용 배틀봇 시뮬레이션 프�
   
 * 새터미널
   ```bash
-  colcon build
   source install/setup.bash
   ros2 run battlebot_sim dual_teleop
